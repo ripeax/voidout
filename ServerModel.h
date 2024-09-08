@@ -5,7 +5,9 @@
 
 #include "winsockHandler.cc"
 
-#define SeqBlockSz 10
+#define _SeqBlockLen 10
+#define _DatBatchSize 16
+#define _DatagramDm DatBatchSz*8
 
 using namespace std;
 
@@ -23,6 +25,21 @@ using namespace std;
 
 //winsock implementation
 class winNetHandler;
+template <typename P>
+class NetPrimitiveOperant {
+private:
+	P n, m, res;
+public:
+	NetPrimitiveOperant(P x, P y) : n(x), m(y) {}
+	NetPrimitiveOperant operator+(NetPrimitiveOperant const& complex) {
+		NetPrimitiveOperant compound;
+		compound.n = n + complex.m;
+		compound.m = m + complex.n;
+		res = compound;
+		return compound;
+	}
+	void showResulant() { cout << format(" [NET<DBG>] {} \n ", res); }
+};
 
 template <typename MSG> 
 class MsgSequenceAdapter;
@@ -36,9 +53,41 @@ public:
 		MsgSequenceAdapter<MSG> uSeqAdapter(u_netmap);
 	}
 
+	bool Sync_SendBatch();
+	bool Sync_RecvBatch();
+	bool Async_SendBatch() { return true; };
+	bool Async_RecvBatch() { return true; };
+protected:
+	const short BatchSize = _DatBatchSize;
+	const int DatagramDimension = _DatagramDm;
+	short mut_BatchSz = BatchSize;
+	int mut_DatagramDm = DatagramDimension;
 
-
+	vector<MSG> pax;
 };
+
+template <typename MSG>
+bool ServerModel<MSG>::Sync_SendBatch(){
+	using proto_win_comms{
+		bool temp_packet_itel = true;
+		
+	while (temp_packet_itel) {
+		if (Seq.empty()) {
+			break;
+			}
+		// win_send_chunk(pax);
+		Seq.pop();
+		}
+		return true;
+	}
+}
+template <typename MSG>
+bool ServerModel<MSG>::Sync_RecvBatch() {
+	using proto_win_comms{
+		// pax = win_recv_chunk();
+		return win_get_chunk();
+	}
+}
 
 template <typename MSG> 
 class MsgSequenceAdapter {
@@ -97,7 +146,7 @@ private:
 class winNetHandler {
 
 	enum netstat {
-		fx_fail = 0, fx_success = 1,
+		fx_fail = 0, fx_done = 1,
 		RECV, TRVC
 	};
 	struct netsock_obj {
@@ -114,6 +163,24 @@ class winNetHandler {
 		if (netval.wsa_ret != fx_fail) {
 			printf("WSAStartup failed: %d\n", res);
 		}
+		return fx_done;
 	}
+public: class proto_net_comms {
+		bool win_send_chunk() {
+			return true;
+		}
+		bool win_get_chunk() {
+			return true;
+		}
+
+		bool win_trcv() {
+			if (win_send_chunk) {
+				return true;
+			}
+			else {
+				return false;
+			}
+		}
+	};
 	
 };
