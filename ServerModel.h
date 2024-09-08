@@ -3,21 +3,41 @@
 #include <unordered_map>
 #include <array>
 
+#include "winsockHandler.cc"
+
 #define SeqBlockSz 10
 
 using namespace std;
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <iphlpapi.h>
+#include <stdio.h>
+
+#pragma comment(lib, "Ws2_32.lib")
+
+//winsock implementation
+class winNetHandler;
 
 template <typename MSG> 
 class MsgSequenceAdapter;
 
 template <typename MSG>
-class ServerModel
+class ServerModel : private winNetHandler
 {
 	unordered_map<MSG, MSG> u_netmap;
 public:
 	ServerModel() {
 		MsgSequenceAdapter<MSG> uSeqAdapter(u_netmap);
 	}
+
+
+
 };
 
 template <typename MSG> 
@@ -71,4 +91,29 @@ private:
 	}
 };
 
+#include <format>
+#include <vector>
 
+class winNetHandler {
+
+	enum netstat {
+		fx_fail = 0, fx_success = 1,
+		RECV, TRVC
+	};
+	struct netsock_obj {
+		WSADATA wsaData;
+		int wsa_ret = WSAStartup(MAKEWORD(2, 2), &wsaData);
+	}netval;
+
+	vector<char> TRCVbuf, RECVbuf;
+
+	int instate() {
+
+		int& res = netval.wsa_ret;
+
+		if (netval.wsa_ret != fx_fail) {
+			printf("WSAStartup failed: %d\n", res);
+		}
+	}
+	
+};
